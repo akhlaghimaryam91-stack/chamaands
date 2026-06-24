@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}چمان - عروسک‌های دستساز{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>عروسک‌های دستساز چمان</h1>
+  <p>هر عروسک یه داستانه، با دست و با عشق ساخته شده</p>
+  <a href="#products" class="btn btn-primary">مشاهده محصولات</a>
+</section>
+
+<h2 class="section-title" id="products">محصولات ما</h2>
+
+<div class="products-grid">
+  {% for product in products %}
+  <div class="product-card">
+    <a href="{{ url_for('product_detail', pid=product.id) }}">
+      {% if product.image %}
+        <img src="{{ url_for('static', filename='uploads/' + product.image) }}"
+             alt="{{ product.name }}">
+      {% elif product.images %}
+        <img src="{{ url_for('static', filename='uploads/' + product.images[0].filename) }}"
+             alt="{{ product.name }}">
+      {% else %}
+        <div class="product-card-img-placeholder">🧸</div>
+      {% endif %}
+    </a>
+    <div class="product-card-body">
+      <h3>{{ product.name }}</h3>
+
+      <div class="price-box">
+        {% set disc = product.best_discount() %}
+        {% if disc %}
+          <span class="price-original">{{ product.price | price }} تومان</span>
+          <span class="discount-badge">
+            {{ disc.value }}{% if disc.discount_type == 'percent' %}٪{% else %} تومان{% endif %} تخفیف
+          </span>
+          <br>
+          <span class="price-final">{{ product.effective_price() | price }} تومان</span>
+        {% else %}
+          <span class="price-only">{{ product.price | price }} تومان</span>
+        {% endif %}
+      </div>
+
+      {% if product.is_made_to_order %}
+        <div style="font-size:.82rem;color:#2e7d32;margin-bottom:.8rem">
+          ✅ قابل سفارش · تحویل {{ product.delivery_days }} روزه
+        </div>
+      {% endif %}
+
+      {% if product.is_available() %}
+        <form action="{{ url_for('cart_add', pid=product.id) }}" method="post">
+          <input type="hidden" name="qty" value="1">
+          <button type="submit" class="btn btn-primary btn-sm" style="width:100%">
+            افزودن به سبد
+          </button>
+        </form>
+      {% else %}
+        <button class="btn btn-outline btn-sm" style="width:100%" disabled>ناموجود</button>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <p style="grid-column:1/-1; text-align:center; color:var(--text-light); padding:3rem">
+    در حال حاضر محصولی موجود نیست.
+  </p>
+  {% endfor %}
+</div>
+{% endblock %}

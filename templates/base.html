@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}چمان{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-brand">🧸 چمان</a>
+  <div class="navbar-links">
+    <a href="/">محصولات</a>
+    <a href="/about">درباره ما</a>
+    <a href="/contact">تماس</a>
+    <a href="/cart">
+      🛒
+      {% set cart = session.get('cart', {}) %}
+      {% set count = cart.values() | sum(attribute='qty') %}
+      {% if count > 0 %}<span class="cart-count">{{ count }}</span>{% endif %}
+    </a>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-messages">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer>
+  <div class="footer-center">
+    <p>تمامی حقوق محفوظ است &copy; 2026 &mdash; <a href="#">چمان</a></p>
+    <p style="margin-top:.4rem; font-size:.8rem;">عروسک‌های دستساز با عشق</p>
+  </div>
+  <div class="footer-trust">
+    <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=748112&Code=OEvTN73rqnpuMtW9rdpRlgWqcUCiMKYf'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=748112&Code=OEvTN73rqnpuMtW9rdpRlgWqcUCiMKYf' alt='' style='cursor:pointer' code='OEvTN73rqnpuMtW9rdpRlgWqcUCiMKYf'></a>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>

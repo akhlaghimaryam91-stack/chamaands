@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}تکمیل خرید - چمان{% endblock %}
+
+{% block head %}
+<style>
+.checkout-wrap {
+  max-width: 620px;
+  margin: 2rem auto;
+  padding: 0 1rem 4rem;
+}
+
+.notice-box {
+  background: var(--peach);
+  border-right: 4px solid var(--pink-dark);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 2rem;
+  font-size: .95rem;
+  line-height: 1.8;
+}
+
+.checkout-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.checkout-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: .6rem;
+  border-bottom: 1.5px solid var(--bg);
+  color: var(--text);
+}
+
+.shipping-options {
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+.shipping-option {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .9rem 1rem;
+  border: 2px solid var(--bg);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+
+.shipping-option:has(input:checked) {
+  border-color: var(--pink);
+  background: var(--cream);
+}
+
+.shipping-option input[type=radio] {
+  accent-color: var(--pink-dark);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.shipping-option-label {
+  flex: 1;
+  font-weight: 600;
+}
+
+.shipping-option-price {
+  color: var(--pink-dark);
+  font-weight: 700;
+}
+
+.summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  font-size: .95rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row.total {
+  border-top: 2px solid var(--bg);
+  padding-top: .8rem;
+  margin-top: .4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--pink-dark);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-wrap">
+
+  <div class="notice-box">
+    📦 <strong>توجه:</strong> محصولات انتخابی <strong>۷ روز کاری</strong> طول می‌کشد تا تولید شود
+    و سپس از طریق <strong>پست پیشتاز</strong> یا <strong>تیپاکس</strong> برای شما ارسال می‌گردد.
+  </div>
+
+  <form action="{{ url_for('checkout') }}" method="post" id="checkoutForm">
+
+    <!-- اطلاعات گیرنده -->
+    <div class="checkout-card">
+      <h3>👤 اطلاعات گیرنده</h3>
+      <div class="form-group">
+        <label>نام و نام خانوادگی *</label>
+        <input type="text" name="full_name" required placeholder="مثال: مریم احمدی">
+      </div>
+      <div class="form-group">
+        <label>شماره موبایل *</label>
+        <input type="tel" name="phone" required placeholder="09xxxxxxxxx" pattern="09[0-9]{9}">
+      </div>
+      <div class="form-group">
+        <label>استان *</label>
+        <select name="province" id="provinceSelect" required onchange="updateCities()">
+          <option value="">-- انتخاب استان --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>شهر *</label>
+        <select name="city" id="citySelect" required>
+          <option value="">-- ابتدا استان را انتخاب کنید --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>آدرس کامل *</label>
+        <textarea name="address" required rows="3"
+                  placeholder="خیابان، کوچه، پلاک، واحد"></textarea>
+      </div>
+      <div class="form-group">
+        <label>کد پستی *</label>
+        <input type="text" name="postal_code" required placeholder="۱۰ رقم بدون خط تیره"
+               pattern="[0-9]{10}" maxlength="10">
+      </div>
+    </div>
+
+    <!-- روش ارسال -->
+    <div class="checkout-card">
+      <h3>🚚 روش ارسال</h3>
+      <div class="shipping-options">
+        <label class="shipping-option">
+          <input type="radio" name="shipping_method" value="pishtaz" checked
+                 onchange="updateTotal()">
+          <span class="shipping-option-label">پست پیشتاز</span>
+          <span class="shipping-option-price">{{ shipping_pishtaz | price }} تومان</span>
+        </label>
+        <label class="shipping-option">
+          <input type="radio" name="shipping_method" value="tipax"
+                 onchange="updateTotal()">
+          <span class="shipping-option-label">تیپاکس</span>
+          <span class="shipping-option-price">{{ shipping_tipax | price }} تومان</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- خلاصه سفارش -->
+    <div class="checkout-card">
+      <h3>🧾 خلاصه سفارش</h3>
+      <div class="summary-rows">
+        <div class="summary-row">
+          <span>جمع محصولات</span>
+          <span>{{ products_total | price }} تومان</span>
+        </div>
+        <div class="summary-row">
+          <span>هزینه ارسال</span>
+          <span id="shippingCost">{{ shipping_pishtaz | price }} تومان</span>
+        </div>
+        <div class="summary-row total">
+          <span>مبلغ قابل پرداخت</span>
+          <span id="grandTotal">{{ (products_total + shipping_pishtaz) | price }} تومان</span>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:1.1rem;padding:1rem">
+      پرداخت امن 💳
+    </button>
+
+  </form>
+</div>
+
+<script>
+const CITIES = {
+  'آذربایجان شرقی': ['تبریز','مراغه','مرند','اهر','بناب','میانه','سراب','شبستر','هشترود','عجب‌شیر'],
+  'آذربایجان غربی': ['ارومیه','خوی','مهاباد','بوکان','میاندوآب','سردشت','نقده','تکاب','پیرانشهر','اشنویه'],
+  'اردبیل': ['اردبیل','مشگین‌شهر','پارس‌آباد','خلخال','گرمی','نمین','نیر'],
+  'اصفهان': ['اصفهان','کاشان','خمینی‌شهر','نجف‌آباد','شاهین‌شهر','فلاورجان','اردستان','گلپایگان','سمیرم','تیران'],
+  'البرز': ['کرج','فردیس','نظرآباد','ساوجبلاغ','طالقان','اشتهارد'],
+  'ایلام': ['ایلام','دهلران','مهران','آبدانان','ایوان'],
+  'بوشهر': ['بوشهر','برازجان','خورموج','دیر','کنگان','گناوه'],
+  'تهران': ['تهران','اسلامشهر','ورامین','دماوند','پاکدشت','رباط‌کریم','قدس','ملارد','شهریار','قرچک','رودهن','پردیس'],
+  'چهارمحال و بختیاری': ['شهرکرد','بروجن','فارسان','لردگان','اردل'],
+  'خراسان جنوبی': ['بیرجند','قاینات','سربیشه','نهبندان','طبس'],
+  'خراسان رضوی': ['مشهد','سبزوار','نیشابور','تربت‌حیدریه','کاشمر','چناران','درگز','تایباد','فریمان','گناباد'],
+  'خراسان شمالی': ['بجنورد','شیروان','اسفراین','جاجرم','آشخانه'],
+  'خوزستان': ['اهواز','دزفول','آبادان','بهبهان','خرمشهر','ماهشهر','شوش','اندیمشک','مسجدسلیمان','رامهرمز'],
+  'زنجان': ['زنجان','ابهر','خرمدره','قیدار','ماهنشان'],
+  'سمنان': ['سمنان','شاهرود','دامغان','گرمسار','مهدی‌شهر'],
+  'سیستان و بلوچستان': ['زاهدان','چابهار','ایرانشهر','زابل','خاش','سراوان','نیکشهر'],
+  'فارس': ['شیراز','مرودشت','کازرون','فسا','جهرم','لار','آباده','نی‌ریز','داراب'],
+  'قزوین': ['قزوین','بوئین‌زهرا','تاکستان','آبیک','آوج'],
+  'قم': ['قم'],
+  'کردستان': ['سنندج','سقز','مریوان','بانه','قروه','بیجار','کامیاران','دیواندره'],
+  'کرمان': ['کرمان','سیرجان','رفسنجان','جیرفت','بم','زرند','شهربابک','بافت','کهنوج'],
+  'کرمانشاه': ['کرمانشاه','اسلام‌آباد غرب','هرسین','کنگاور','صحنه','سنقر','پاوه','جوانرود','سرپل‌ذهاب'],
+  'کهگیلویه و بویراحمد': ['یاسوج','گچساران','دهدشت'],
+  'گلستان': ['گرگان','گنبدکاووس','علی‌آباد کتول','بندرترکمن','کردکوی','آق‌قلا','مینودشت'],
+  'گیلان': ['رشت','بندرانزلی','لاهیجان','لنگرود','آستارا','رودسر','صومعه‌سرا','فومن','آستانه اشرفیه'],
+  'لرستان': ['خرم‌آباد','بروجرد','کوهدشت','دورود','الیگودرز','ازنا','پل‌دختر'],
+  'مازندران': ['ساری','آمل','بابل','قائمشهر','چالوس','نوشهر','بابلسر','تنکابن','نکا','رامسر','محمودآباد','جویبار'],
+  'مرکزی': ['اراک','ساوه','خمین','محلات','دلیجان'],
+  'هرمزگان': ['بندرعباس','بندرلنگه','قشم','کیش','جاسک','خمیر'],
+  'همدان': ['همدان','ملایر','نهاوند','کبودرآهنگ','اسدآباد','تویسرکان','بهار'],
+  'یزد': ['یزد','میبد','اردکان','ابرکوه','بافق','تفت','مهریز']
+};
+
+const provinceSelect = document.getElementById('provinceSelect');
+const citySelect = document.getElementById('citySelect');
+
+Object.keys(CITIES).sort().forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  provinceSelect.appendChild(opt);
+});
+
+function updateCities() {
+  const province = provinceSelect.value;
+  citySelect.innerHTML = '';
+  if (!province) {
+    citySelect.innerHTML = '<option value="">-- ابتدا استان را انتخاب کنید --</option>';
+    return;
+  }
+  const placeholder = document.createElement('option');
+  placeholder.value = ''; placeholder.textContent = '-- انتخاب شهر --';
+  citySelect.appendChild(placeholder);
+  (CITIES[province] || []).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    citySelect.appendChild(opt);
+  });
+}
+
+const productTotal = {{ products_total }};
+const prices = { pishtaz: {{ shipping_pishtaz }}, tipax: {{ shipping_tipax }} };
+
+function formatPrice(n) {
+  return n.toLocaleString('fa-IR').replace(/[۰-۹]/g, d => String.fromCharCode(d.charCodeAt(0) - 1728));
+}
+
+function updateTotal() {
+  const method = document.querySelector('input[name=shipping_method]:checked').value;
+  const shipping = prices[method];
+  const grand = productTotal + shipping;
+  document.getElementById('shippingCost').textContent = formatPrice(shipping) + ' تومان';
+  document.getElementById('grandTotal').textContent = formatPrice(grand) + ' تومان';
+}
+</script>
+{% endblock %}

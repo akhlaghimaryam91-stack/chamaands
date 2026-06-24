@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} - چمان{% endblock %}
+
+{% block head %}
+<style>
+.gallery { display:flex; gap:.8rem; margin-top:1rem; flex-wrap:wrap; }
+.gallery-thumb {
+  width:72px; height:72px; object-fit:cover;
+  border-radius:8px; cursor:pointer;
+  border:2px solid transparent; transition:border-color .2s;
+}
+.gallery-thumb.active, .gallery-thumb:hover { border-color:var(--pink-dark); }
+.main-img { width:100%; border-radius:var(--radius); box-shadow:var(--shadow);
+            cursor:zoom-in; transition:opacity .2s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+  <div>
+    {% set all_images = ([product.image] if product.image else []) + (product.images | map(attribute='filename') | list) %}
+    {% if all_images %}
+      <img id="mainImg" class="main-img"
+           src="{{ url_for('static', filename='uploads/' + all_images[0]) }}"
+           alt="{{ product.name }}">
+      {% if all_images|length > 1 %}
+      <div class="gallery">
+        {% for img in all_images %}
+        <img class="gallery-thumb {% if loop.first %}active{% endif %}"
+             src="{{ url_for('static', filename='uploads/' + img) }}"
+             onclick="switchImg(this, '{{ url_for('static', filename='uploads/' + img) }}')"
+             alt="">
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="product-card-img-placeholder" style="height:360px;border-radius:16px">🧸</div>
+    {% endif %}
+  </div>
+
+  <div class="product-detail-info">
+    <h1>{{ product.name }}</h1>
+
+    {% if product.description %}
+    <p class="description">{{ product.description }}</p>
+    {% endif %}
+
+    <div class="price-box" style="margin-bottom:1.5rem">
+      {% set disc = product.best_discount() %}
+      {% if disc %}
+        <div class="price-original">{{ product.price | price }} تومان</div>
+        <span class="discount-badge">
+          {{ disc.value }}{% if disc.discount_type == 'percent' %}٪{% else %} تومان{% endif %} تخفیف
+          {% if disc.title %} — {{ disc.title }}{% endif %}
+        </span>
+        <div class="price-final" style="font-size:1.6rem;margin-top:.4rem">
+          {{ product.effective_price() | price }} تومان
+        </div>
+      {% else %}
+        <div class="price-only" style="font-size:1.6rem">{{ product.price | price }} تومان</div>
+      {% endif %}
+    </div>
+
+    {% if product.is_made_to_order %}
+      <div style="background:var(--mint);border-radius:10px;padding:.8rem 1rem;
+                  margin-bottom:1.2rem;font-size:.95rem">
+        ✅ <strong>قابل سفارش</strong> — تحویل ظرف {{ product.delivery_days }} روز کاری
+      </div>
+    {% elif product.stock > 0 %}
+      <p class="stock-info">موجودی: {{ product.stock }} عدد</p>
+    {% endif %}
+
+    {% set bulk_discounts = product.discounts | selectattr('is_active') | selectattr('min_quantity', 'gt', 1) | list %}
+    {% if bulk_discounts %}
+    <div style="background:var(--peach);border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.9rem">
+      🎁 <strong>تخفیف عمده:</strong>
+      {% for bd in bulk_discounts %}
+        خرید {{ bd.min_quantity }} عدد به بالا:
+        {{ bd.value }}{% if bd.discount_type == 'percent' %}٪{% else %} تومان{% endif %} تخفیف
+        {% if not loop.last %} | {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if product.is_available() %}
+      <form action="{{ url_for('cart_add', pid=product.id) }}" method="post"
+            style="display:flex;gap:.8rem;align-items:center">
+        <input type="number" name="qty" value="1" min="1"
+               {% if not product.is_made_to_order %}max="{{ product.stock }}"{% endif %}
+               style="width:70px;padding:.6rem;border:1.5px solid var(--pink);border-radius:10px;
+                      font-family:Vazirmatn,sans-serif;font-size:1rem;text-align:center">
+        <button type="submit" class="btn btn-primary">افزودن به سبد 🛒</button>
+      </form>
+    {% else %}
+      <p class="out-of-stock">این محصول موجود نیست</p>
+    {% endif %}
+
+    <div style="margin-top:2rem">
+      <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">← بازگشت به فروشگاه</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchImg(thumb, src) {
+  document.getElementById('mainImg').src = src;
+  document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+  thumb.classList.add('active');
+}
+</script>
+{% endblock %}

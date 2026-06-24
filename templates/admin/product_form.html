@@ -1,0 +1,119 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}{% if product %}ویرایش محصول{% else %}محصول جدید{% endif %} - چمان{% endblock %}
+
+{% block content %}
+<div style="max-width:650px">
+  <h1>{% if product %}ویرایش: {{ product.name }}{% else %}محصول جدید{% endif %}</h1>
+
+  <div class="form-card" style="margin-top:1.5rem">
+    <form method="post" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label>نام محصول *</label>
+        <input type="text" name="name" required
+               value="{{ product.name if product else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>توضیحات</label>
+        <textarea name="description" rows="4">{{ product.description if product else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>قیمت (تومان) *</label>
+        <input type="number" name="price" required min="0"
+               value="{{ product.price if product else '' }}">
+      </div>
+
+      <!-- نوع موجودی -->
+      <div class="form-group">
+        <label>نوع موجودی</label>
+        <div style="display:flex;gap:1.5rem;align-items:center;margin-top:.4rem">
+          <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;cursor:pointer">
+            <input type="radio" name="stock_type" value="stock"
+                   {% if not product or not product.is_made_to_order %}checked{% endif %}
+                   onchange="toggleStockType(this.value)">
+            موجودی مشخص
+          </label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;cursor:pointer">
+            <input type="radio" name="stock_type" value="order"
+                   {% if product and product.is_made_to_order %}checked{% endif %}
+                   onchange="toggleStockType(this.value)">
+            قابل سفارش (ساخت سفارشی)
+          </label>
+        </div>
+      </div>
+
+      <div id="stockBox" style="{% if product and product.is_made_to_order %}display:none{% endif %}">
+        <div class="form-group">
+          <label>تعداد موجودی</label>
+          <input type="number" name="stock" min="0"
+                 value="{{ product.stock if product else 0 }}">
+        </div>
+      </div>
+
+      <div id="orderBox" style="{% if not product or not product.is_made_to_order %}display:none{% endif %}">
+        <div class="form-group">
+          <label>مدت تحویل (روز کاری)</label>
+          <input type="number" name="delivery_days" min="1" max="60"
+                 value="{{ product.delivery_days if product else 7 }}">
+        </div>
+      </div>
+
+      <!-- تصویر اصلی -->
+      <div class="form-group">
+        <label>تصویر اصلی</label>
+        {% if product and product.image %}
+          <div style="margin-bottom:.8rem">
+            <img src="{{ url_for('static', filename='uploads/' + product.image) }}"
+                 style="width:100px;height:100px;object-fit:cover;border-radius:10px">
+          </div>
+        {% endif %}
+        <input type="file" name="image" accept="image/*">
+      </div>
+
+      <!-- تصاویر تکمیلی -->
+      <div class="form-group">
+        <label>تصاویر تکمیلی (گالری) — می‌توانی چند عکس انتخاب کنی</label>
+        {% if product and product.images %}
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem">
+            {% for img in product.images %}
+            <div style="position:relative">
+              <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                   style="width:80px;height:80px;object-fit:cover;border-radius:8px">
+              <a href="{{ url_for('admin_image_delete', iid=img.id) }}"
+                 style="position:absolute;top:-6px;right:-6px;background:#e88888;color:white;
+                        border-radius:50%;width:20px;height:20px;display:flex;align-items:center;
+                        justify-content:center;font-size:.75rem;text-decoration:none"
+                 onclick="return confirm('حذف این تصویر؟')">×</a>
+            </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <input type="file" name="gallery_images" accept="image/*" multiple>
+        <small style="color:var(--text-light)">برای انتخاب چند عکس، Ctrl را نگه دار</small>
+      </div>
+
+      <div class="form-check">
+        <input type="checkbox" name="is_active" id="is_active"
+               {% if not product or product.is_active %}checked{% endif %}>
+        <label for="is_active">محصول فعال باشد (نمایش در سایت)</label>
+      </div>
+
+      <div style="display:flex;gap:1rem;margin-top:1.2rem">
+        <button type="submit" class="btn btn-primary">
+          {% if product %}ذخیره تغییرات{% else %}افزودن محصول{% endif %}
+        </button>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-outline">انصراف</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleStockType(val) {
+  document.getElementById('stockBox').style.display = val === 'stock' ? '' : 'none';
+  document.getElementById('orderBox').style.display = val === 'order' ? '' : 'none';
+}
+</script>
+{% endblock %}
