@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}پنل ادمین - چمان{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="brand">🧸 چمان</div>
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+      📊 داشبورد
+    </a>
+    <a href="{{ url_for('admin_products') }}"
+       class="{% if 'product' in request.endpoint %}active{% endif %}">
+      🧸 محصولات
+    </a>
+    <a href="{{ url_for('admin_discounts') }}"
+       class="{% if 'discount' in request.endpoint %}active{% endif %}">
+      🎁 تخفیف‌ها
+    </a>
+    <a href="{{ url_for('admin_orders') }}"
+       class="{% if 'order' in request.endpoint %}active{% endif %}">
+      📦 سفارشات
+    </a>
+    <a href="{{ url_for('admin_change_password') }}"
+       class="{% if request.endpoint == 'admin_change_password' %}active{% endif %}">
+      🔑 تغییر رمز عبور
+    </a>
+    <a href="{{ url_for('index') }}" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:1rem">
+      🌐 مشاهده سایت
+    </a>
+    <a href="{{ url_for('admin_logout') }}">🚪 خروج</a>
+  </aside>
+
+  <main class="admin-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+</body>
+</html>

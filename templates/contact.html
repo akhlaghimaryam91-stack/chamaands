@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}تماس با ما - چمان{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <div class="form-card" style="text-align:center">
+    <h2>📞 تماس با ما</h2>
+    <p style="color:var(--text-light);margin-bottom:2rem">
+      برای سفارش خاص یا هر سوالی، از طریق راه‌های زیر با ما در تماس باشید.
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:1.2rem">
+      <a href="https://wa.me/989xxxxxxxxx"
+         style="display:flex;align-items:center;gap:1rem;background:var(--mint);
+                border-radius:12px;padding:1rem 1.5rem;color:var(--text);font-weight:500">
+        <span style="font-size:1.8rem">💬</span>
+        <div style="text-align:right">
+          <div>واتساپ</div>
+          <div style="font-size:.85rem;color:var(--text-light)">پاسخ‌گویی ۹ صبح تا ۹ شب</div>
+        </div>
+      </a>
+
+      <a href="https://ble.ir/chamaan_ir"
+         style="display:flex;align-items:center;gap:1rem;background:var(--lavender);
+                border-radius:12px;padding:1rem 1.5rem;color:var(--text);font-weight:500">
+        <span style="font-size:1.8rem">🔵</span>
+        <div style="text-align:right">
+          <div>بله</div>
+          <div style="font-size:.85rem;color:var(--text-light)">@chamaan_ir</div>
+        </div>
+      </a>
+
+      <a href="https://instagram.com/chamaan.ir"
+         style="display:flex;align-items:center;gap:1rem;background:var(--peach);
+                border-radius:12px;padding:1rem 1.5rem;color:var(--text);font-weight:500">
+        <span style="font-size:1.8rem">📸</span>
+        <div style="text-align:right">
+          <div>اینستاگرام</div>
+          <div style="font-size:.85rem;color:var(--text-light)">@chamaan.ir</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
