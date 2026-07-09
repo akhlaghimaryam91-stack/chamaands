@@ -1,0 +1,97 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}سفارشات - چمان{% endblock %}
+
+{% block content %}
+<h1>سفارشات</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div style="overflow-x:auto">
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>شماره</th>
+      <th>تاریخ</th>
+      <th>خریدار</th>
+      <th>آدرس</th>
+      <th>ارسال</th>
+      <th>اقلام</th>
+      <th>مبلغ کل</th>
+      <th>رسید</th>
+      <th>وضعیت</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>#{{ order.id }}</td>
+      <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</td>
+      <td>
+        <div style="font-weight:600">{{ order.full_name }}</div>
+        <div style="color:var(--text-light);font-size:.85rem">{{ order.phone }}</div>
+      </td>
+      <td style="max-width:220px">
+        <div>{{ order.province }}{% if order.city %}، {{ order.city }}{% endif %}</div>
+        <div style="color:var(--text-light);font-size:.85rem">{{ order.address }}</div>
+        {% if order.postal_code %}
+        <div style="color:var(--text-light);font-size:.8rem">کدپستی: {{ order.postal_code }}</div>
+        {% endif %}
+      </td>
+      <td>
+        {{ 'تیپاکس' if order.shipping_method == 'tipax' else 'پیشتاز' }}
+        <div style="color:var(--text-light);font-size:.85rem">{{ order.shipping_cost|price }} تومان</div>
+      </td>
+      <td>
+        <ul style="margin:0;padding-inline-start:1.1rem;font-size:.85rem">
+          {% for item in order.items %}
+          <li>{{ item.product_name }} × {{ item.quantity }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+      <td style="font-weight:600">{{ order.total_amount|price }} تومان</td>
+      <td>
+        {% if order.receipt_image %}
+        <a href="{{ url_for('static', filename='uploads/' + order.receipt_image) }}" target="_blank">
+          <img src="{{ url_for('static', filename='uploads/' + order.receipt_image) }}"
+               style="width:60px;height:60px;object-fit:cover;border-radius:8px">
+        </a>
+        {% else %}
+        <span style="color:var(--text-light);font-size:.85rem">—</span>
+        {% endif %}
+      </td>
+      <td>
+        <span class="status-badge status-{{ order.status }}">
+          {% if order.status == 'pending' %}در انتظار پرداخت
+          {% elif order.status == 'awaiting_confirmation' %}در انتظار تایید رسید
+          {% elif order.status == 'paid' %}پرداخت شده
+          {% elif order.status == 'shipped' %}ارسال شده
+          {% elif order.status == 'failed' %}ناموفق
+          {% else %}{{ order.status }}{% endif %}
+        </span>
+      </td>
+      <td>
+        <form method="post" action="{{ url_for('admin_order_status', oid=order.id) }}"
+              style="display:flex;gap:.4rem;align-items:center">
+          <select name="status">
+            <option value="pending"               {% if order.status == 'pending' %}selected{% endif %}>در انتظار پرداخت</option>
+            <option value="awaiting_confirmation"  {% if order.status == 'awaiting_confirmation' %}selected{% endif %}>در انتظار تایید رسید</option>
+            <option value="paid"                  {% if order.status == 'paid' %}selected{% endif %}>پرداخت شده</option>
+            <option value="shipped"               {% if order.status == 'shipped' %}selected{% endif %}>ارسال شده</option>
+            <option value="failed"                {% if order.status == 'failed' %}selected{% endif %}>ناموفق</option>
+          </select>
+          <button type="submit" class="btn btn-outline" style="padding:.4rem .8rem;font-size:.85rem">ثبت</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" style="text-align:center;color:var(--text-light)">هنوز سفارشی ثبت نشده.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -13,9 +13,10 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
-# ZainPal
-ZAINPAL_MERCHANT = os.getenv('ZAINPAL_MERCHANT', 'YOUR_MERCHANT_ID')
-ZAINPAL_CALLBACK = os.getenv('ZAINPAL_CALLBACK', 'https://chamaands.ir/payment/verify')
+# پرداخت کارت به کارت
+CARD_NUMBER = os.getenv('CARD_NUMBER', 'XXXX-XXXX-XXXX-XXXX')
+CARD_HOLDER_NAME = os.getenv('CARD_HOLDER_NAME', 'نام صاحب حساب')
+CARD_BANK_NAME = os.getenv('CARD_BANK_NAME', '')
 
 # Shipping costs (تومان) — برای تغییر قیمت فقط همین دو خط رو ویرایش کن
 SHIPPING_PISHTAZ = 50000

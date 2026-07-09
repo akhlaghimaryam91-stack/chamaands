@@ -52,6 +52,13 @@ class Product(db.Model):
         return self.is_made_to_order or self.stock > 0
 
 
+class AdminUser(db.Model):
+    __tablename__ = 'admin_user'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(300), nullable=False)
+
+
 class ProductImage(db.Model):
     __tablename__ = 'product_images'
     id = db.Column(db.Integer, primary_key=True)
@@ -86,6 +93,7 @@ class Order(db.Model):
     shipping_cost = db.Column(db.Integer, default=0)
     total_amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='pending')
+    receipt_image = db.Column(db.String(300))
     authority = db.Column(db.String(200))
     ref_id = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

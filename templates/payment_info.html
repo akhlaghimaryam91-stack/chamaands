@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}اطلاعات پرداخت - چمان{% endblock %}
+
+{% block head %}
+<style>
+.payment-wrap {
+  max-width: 560px;
+  margin: 2rem auto;
+  padding: 0 1rem 4rem;
+}
+
+.payment-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.payment-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: .6rem;
+  border-bottom: 1.5px solid var(--bg);
+}
+
+.card-info-box {
+  background: var(--peach);
+  border-radius: 10px;
+  padding: 1.2rem;
+  text-align: center;
+}
+
+.card-info-box .card-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--pink-dark);
+  direction: ltr;
+  margin: .4rem 0;
+}
+
+.card-info-box .card-holder {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.card-info-box .card-bank {
+  color: var(--text-light);
+  font-size: .9rem;
+  margin-top: .3rem;
+}
+
+.amount-box {
+  text-align: center;
+  margin: 1.2rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--pink-dark);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-wrap">
+
+  <div class="payment-card">
+    <h3>💳 پرداخت کارت به کارت</h3>
+    <p style="margin-bottom:1rem">لطفاً مبلغ زیر را به شماره کارت زیر واریز کرده و سپس تصویر رسید پرداخت را ثبت کنید.</p>
+
+    <div class="card-info-box">
+      {% if card_bank %}<div class="card-bank">{{ card_bank }}</div>{% endif %}
+      <div class="card-number">{{ card_number }}</div>
+      <div class="card-holder">به نام: {{ card_holder }}</div>
+    </div>
+
+    <div class="amount-box">
+      مبلغ قابل پرداخت: {{ order.total_amount | price }} تومان
+    </div>
+  </div>
+
+  <div class="payment-card">
+    <h3>🧾 آپلود رسید پرداخت</h3>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if order.receipt_image %}
+      <p style="color:var(--pink-dark);font-weight:600">✅ رسید پرداخت شما ثبت شد و در انتظار تایید ادمین است.</p>
+      <img src="{{ url_for('static', filename='uploads/' + order.receipt_image) }}"
+           style="max-width:100%;border-radius:10px;margin-top:.8rem">
+    {% else %}
+      <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>تصویر رسید پرداخت *</label>
+          <input type="file" name="receipt" accept="image/*" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          ثبت رسید پرداخت
+        </button>
+      </form>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

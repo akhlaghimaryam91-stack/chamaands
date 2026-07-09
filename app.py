@@ -1,14 +1,14 @@
 ﻿import os
 import uuid
-import requests
 from datetime import datetime
 from flask import (Flask, render_template, request, redirect, url_for,
-                   session, flash, abort)
+                   session, flash)
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 import config
-from models import db, Product, ProductImage, Discount, Order, OrderItem
+from models import db, Product, ProductImage, Discount, Order, OrderItem, AdminUser
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -19,12 +19,17 @@ with app.app_context():
     db.create_all()
     from sqlalchemy import text
     with db.engine.connect() as conn:
-        for col, definition in [('province', 'VARCHAR(100)'), ('city', 'VARCHAR(100)'), ('shipping_method', 'VARCHAR(50)'), ('shipping_cost', 'INTEGER DEFAULT 0')]:
+        for col, definition in [('province', 'VARCHAR(100)'), ('city', 'VARCHAR(100)'), ('shipping_method', 'VARCHAR(50)'), ('shipping_cost', 'INTEGER DEFAULT 0'), ('receipt_image', 'VARCHAR(300)')]:
             try:
                 conn.execute(text(f'ALTER TABLE orders ADD COLUMN {col} {definition}'))
                 conn.commit()
             except Exception:
                 pass
+
+    if not AdminUser.query.first():
+        db.session.add(AdminUser(username=config.ADMIN_USERNAME,
+                                  password_hash=generate_password_hash(config.ADMIN_PASSWORD)))
+        db.session.commit()
 
 
 @app.before_request
@@ -227,36 +232,8 @@ def checkout():
                     product.stock = max(0, product.stock - item['qty'])
 
         db.session.commit()
-
-        data = {
-            'merchant_id': config.ZAINPAL_MERCHANT,
-            'amount': total * 10,
-            'callback_url': config.ZAINPAL_CALLBACK,
-            'description': f'سفارش شماره {order.id} - چمان',
-            'metadata': {'mobile': phone, 'email': ''}
-        }
-        try:
-            resp = requests.post(
-                'https://api.zarinpal.com/pg/v4/payment/request.json',
-                json=data, timeout=10
-            )
-            result = resp.json()
-            if result.get('data', {}).get('code') == 100:
-                authority = result['data']['authority']
-                order.authority = authority
-                db.session.commit()
-                session['cart'] = {}
-                return redirect(f"https://www.zarinpal.com/pg/StartPay/{authority}")
-            else:
-                flash('خطا در اتصال به درگاه پرداخت.', 'error')
-                db.session.delete(order)
-                db.session.commit()
-        except Exception:
-            flash('خطا در اتصال به درگاه پرداخت.', 'error')
-            db.session.delete(order)
-            db.session.commit()
-
-        return redirect(url_for('checkout'))
+        session['cart'] = {}
+        return redirect(url_for('checkout_payment', oid=order.id))
 
     products_total = cart_total(cart)
     return render_template('checkout.html', products_total=products_total, cart=cart,
@@ -264,39 +241,25 @@ def checkout():
                            shipping_tipax=config.SHIPPING_TIPAX)
 
 
-@app.route('/payment/verify')
-def payment_verify():
-    authority = request.args.get('Authority')
-    status = request.args.get('Status')
-    order = Order.query.filter_by(authority=authority).first()
-    if not order:
-        abort(404)
+@app.route('/checkout/payment/<int:oid>', methods=['GET', 'POST'])
+def checkout_payment(oid):
+    order = Order.query.get_or_404(oid)
 
-    if status == 'OK':
-        data = {
-            'merchant_id': config.ZAINPAL_MERCHANT,
-            'amount': order.total_amount * 10,
-            'authority': authority
-        }
-        try:
-            resp = requests.post(
-                'https://api.zarinpal.com/pg/v4/payment/verify.json',
-                json=data, timeout=10
-            )
-            result = resp.json()
-            if result.get('data', {}).get('code') in (100, 101):
-                ref_id = result['data']['ref_id']
-                order.status = 'paid'
-                order.ref_id = str(ref_id)
-                db.session.commit()
-                return render_template('payment_result.html',
-                                       success=True, order=order, ref_id=ref_id)
-        except Exception:
-            pass
+    if request.method == 'POST':
+        receipt = save_image(request.files.get('receipt'))
+        if receipt:
+            order.receipt_image = receipt
+            order.status = 'awaiting_confirmation'
+            db.session.commit()
+            flash('رسید پرداخت با موفقیت ثبت شد. سفارش شما پس از بررسی تایید می‌شود.', 'success')
+        else:
+            flash('لطفاً یک تصویر معتبر از رسید انتخاب کنید.', 'error')
+        return redirect(url_for('checkout_payment', oid=order.id))
 
-    order.status = 'failed'
-    db.session.commit()
-    return render_template('payment_result.html', success=False, order=order)
+    return render_template('payment_info.html', order=order,
+                           card_number=config.CARD_NUMBER,
+                           card_holder=config.CARD_HOLDER_NAME,
+                           card_bank=config.CARD_BANK_NAME)
 
 
 # ─── admin ────────────────────────────────────────────────────────────────────
@@ -304,8 +267,9 @@ def payment_verify():
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        if (request.form['username'] == config.ADMIN_USERNAME and
-                request.form['password'] == config.ADMIN_PASSWORD):
+        admin = AdminUser.query.first()
+        if (admin and request.form['username'] == admin.username and
+                check_password_hash(admin.password_hash, request.form['password'])):
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         flash('نام کاربری یا رمز عبور اشتباه است.', 'error')
@@ -316,6 +280,29 @@ def admin_login():
 def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('admin_login'))
+
+
+@app.route('/admin/change-password', methods=['GET', 'POST'])
+@admin_required
+def admin_change_password():
+    if request.method == 'POST':
+        admin = AdminUser.query.first()
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not check_password_hash(admin.password_hash, current_password):
+            flash('رمز عبور فعلی اشتباه است.', 'error')
+        elif len(new_password) < 6:
+            flash('رمز عبور جدید باید حداقل ۶ کاراکتر باشد.', 'error')
+        elif new_password != confirm_password:
+            flash('رمز عبور جدید و تکرار آن یکسان نیستند.', 'error')
+        else:
+            admin.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            flash('رمز عبور با موفقیت تغییر کرد.', 'success')
+            return redirect(url_for('admin_dashboard'))
+    return render_template('admin/change_password.html')
 
 
 @app.route('/admin')

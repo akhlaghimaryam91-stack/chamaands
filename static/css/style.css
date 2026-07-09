@@ -453,10 +453,11 @@ a:hover { color: var(--text); }
   font-weight: 600;
 }
 
-.status-pending  { background: #fff3e0; color: #e65100; }
-.status-paid     { background: #e8f5e9; color: #2e7d32; }
-.status-failed   { background: #ffebee; color: #c62828; }
-.status-shipped  { background: #e3f2fd; color: #1565c0; }
+.status-pending               { background: #fff3e0; color: #e65100; }
+.status-awaiting_confirmation { background: #ede7f6; color: #5e35b1; }
+.status-paid                  { background: #e8f5e9; color: #2e7d32; }
+.status-failed                { background: #ffebee; color: #c62828; }
+.status-shipped               { background: #e3f2fd; color: #1565c0; }
 
 /* ── Payment Result ── */
 .payment-result {
