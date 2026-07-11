@@ -1,0 +1,61 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}نظرات - چمان{% endblock %}
+
+{% block content %}
+<h1>نظرات خریداران</h1>
+
+<div style="overflow-x:auto">
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>محصول</th>
+      <th>نام</th>
+      <th>امتیاز</th>
+      <th>نظر</th>
+      <th>تاریخ</th>
+      <th>وضعیت</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for review in reviews %}
+    <tr>
+      <td>
+        {% if review.product %}
+          <a href="{{ url_for('product_detail', pid=review.product.id) }}" target="_blank">{{ review.product.name }}</a>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>{{ review.name }}</td>
+      <td>{{ '⭐' * review.rating }}</td>
+      <td style="max-width:280px">{{ review.comment or '—' }}</td>
+      <td>{{ review.created_at.strftime('%Y-%m-%d %H:%M') if review.created_at else '' }}</td>
+      <td>
+        {% if review.is_approved %}
+          <span class="status-badge status-paid">تایید شده</span>
+        {% else %}
+          <span class="status-badge status-pending">در انتظار تایید</span>
+        {% endif %}
+      </td>
+      <td>
+        <div style="display:flex;gap:.4rem">
+          {% if not review.is_approved %}
+          <form method="post" action="{{ url_for('admin_review_approve', rid=review.id) }}">
+            <button type="submit" class="btn btn-primary" style="padding:.4rem .8rem;font-size:.85rem">تایید</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin_review_delete', rid=review.id) }}"
+                onsubmit="return confirm('این نظر حذف شود؟')">
+            <button type="submit" class="btn btn-outline" style="padding:.4rem .8rem;font-size:.85rem">حذف</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" style="text-align:center;color:var(--text-light)">هنوز نظری ثبت نشده.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

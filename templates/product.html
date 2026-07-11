@@ -12,6 +12,24 @@
 .gallery-thumb.active, .gallery-thumb:hover { border-color:var(--pink-dark); }
 .main-img { width:100%; border-radius:var(--radius); box-shadow:var(--shadow);
             cursor:zoom-in; transition:opacity .2s; }
+
+.reviews-section { margin-top:3rem; }
+.reviews-section h2 { font-size:1.3rem; margin-bottom:1rem; }
+.review-summary { display:flex; align-items:center; gap:.8rem; margin-bottom:1.5rem; }
+.review-summary .avg { font-size:2rem; font-weight:700; color:var(--pink-dark); }
+.review-summary .stars { color:#f5a623; font-size:1.2rem; letter-spacing:2px; }
+.review-card {
+  background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:1.2rem 1.5rem; margin-bottom:1rem;
+}
+.review-card .review-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; }
+.review-card .review-name { font-weight:600; }
+.review-card .review-stars { color:#f5a623; letter-spacing:1px; }
+.review-card .review-date { color:var(--text-light); font-size:.8rem; }
+.review-form-card {
+  background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:1.5rem; margin-top:1.5rem;
+}
 </style>
 {% endblock %}
 
@@ -98,6 +116,62 @@
     <div style="margin-top:2rem">
       <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">← بازگشت به فروشگاه</a>
     </div>
+  </div>
+</div>
+
+<div class="reviews-section">
+  <h2>💬 نظرات خریداران</h2>
+
+  {% set approved = product.approved_reviews() %}
+  {% if approved %}
+    <div class="review-summary">
+      <span class="avg">{{ product.average_rating() }}</span>
+      <div>
+        <div class="stars">{{ '⭐' * (product.average_rating() | round | int) }}</div>
+        <div style="color:var(--text-light);font-size:.85rem">از {{ approved | length }} نظر</div>
+      </div>
+    </div>
+
+    {% for review in approved %}
+    <div class="review-card">
+      <div class="review-head">
+        <span class="review-name">{{ review.name }}</span>
+        <span class="review-date">{{ review.created_at.strftime('%Y-%m-%d') if review.created_at else '' }}</span>
+      </div>
+      <div class="review-stars">{{ '⭐' * review.rating }}</div>
+      {% if review.comment %}
+      <p style="margin-top:.5rem">{{ review.comment }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:var(--text-light)">هنوز نظری برای این محصول ثبت نشده. اولین نفری باش که نظر می‌ده!</p>
+  {% endif %}
+
+  <div class="review-form-card">
+    <h3 style="margin-bottom:1rem">ثبت نظر شما</h3>
+    <form method="post" action="{{ url_for('product_review', pid=product.id) }}">
+      <div class="form-group">
+        <label>نام شما *</label>
+        <input type="text" name="name" required placeholder="مثال: مریم احمدی">
+      </div>
+      <div class="form-group">
+        <label>امتیاز *</label>
+        <select name="rating" required>
+          <option value="">-- انتخاب امتیاز --</option>
+          <option value="5">⭐⭐⭐⭐⭐ (عالی)</option>
+          <option value="4">⭐⭐⭐⭐ (خوب)</option>
+          <option value="3">⭐⭐⭐ (متوسط)</option>
+          <option value="2">⭐⭐ (ضعیف)</option>
+          <option value="1">⭐ (بد)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>نظر شما</label>
+        <textarea name="comment" rows="3" placeholder="تجربه‌تون از این محصول رو بنویسید (اختیاری)"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">ثبت نظر</button>
+    </form>
   </div>
 </div>
 

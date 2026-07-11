@@ -27,6 +27,10 @@
        class="{% if 'order' in request.endpoint %}active{% endif %}">
       📦 سفارشات
     </a>
+    <a href="{{ url_for('admin_reviews') }}"
+       class="{% if 'review' in request.endpoint %}active{% endif %}">
+      ⭐ نظرات
+    </a>
     <a href="{{ url_for('admin_change_password') }}"
        class="{% if request.endpoint == 'admin_change_password' %}active{% endif %}">
       🔑 تغییر رمز عبور

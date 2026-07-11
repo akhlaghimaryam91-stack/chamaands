@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 import config
-from models import db, Product, ProductImage, Discount, Order, OrderItem, AdminUser
+from models import db, Product, ProductImage, Discount, Order, OrderItem, AdminUser, Review
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -103,6 +103,24 @@ def index():
 def product_detail(pid):
     product = Product.query.get_or_404(pid)
     return render_template('product.html', product=product)
+
+
+@app.route('/product/<int:pid>/review', methods=['POST'])
+def product_review(pid):
+    product = Product.query.get_or_404(pid)
+    name = request.form.get('name', '').strip()
+    rating = request.form.get('rating', '').strip()
+    comment = request.form.get('comment', '').strip()
+
+    if not name or rating not in ('1', '2', '3', '4', '5'):
+        flash('لطفاً نام و امتیاز را به‌درستی وارد کنید.', 'error')
+    else:
+        review = Review(product_id=product.id, name=name, rating=int(rating), comment=comment)
+        db.session.add(review)
+        db.session.commit()
+        flash('نظر شما ثبت شد و پس از بررسی نمایش داده می‌شود.', 'success')
+
+    return redirect(url_for('product_detail', pid=product.id))
 
 
 @app.route('/about')
@@ -452,6 +470,33 @@ def admin_discount_delete(did):
     db.session.commit()
     flash('تخفیف حذف شد.', 'success')
     return redirect(url_for('admin_discounts'))
+
+
+@app.route('/admin/reviews')
+@admin_required
+def admin_reviews():
+    reviews = Review.query.order_by(Review.is_approved.asc(), Review.created_at.desc()).all()
+    return render_template('admin/reviews.html', reviews=reviews)
+
+
+@app.route('/admin/reviews/<int:rid>/approve', methods=['POST'])
+@admin_required
+def admin_review_approve(rid):
+    review = Review.query.get_or_404(rid)
+    review.is_approved = True
+    db.session.commit()
+    flash('نظر تایید شد.', 'success')
+    return redirect(url_for('admin_reviews'))
+
+
+@app.route('/admin/reviews/<int:rid>/delete', methods=['POST'])
+@admin_required
+def admin_review_delete(rid):
+    review = Review.query.get_or_404(rid)
+    db.session.delete(review)
+    db.session.commit()
+    flash('نظر حذف شد.', 'success')
+    return redirect(url_for('admin_reviews'))
 
 
 @app.route('/admin/orders')

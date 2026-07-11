@@ -51,6 +51,18 @@ class Product(db.Model):
     def is_available(self):
         return self.is_made_to_order or self.stock > 0
 
+    def approved_reviews(self):
+        return sorted(
+            [r for r in self.reviews if r.is_approved],
+            key=lambda r: r.created_at, reverse=True
+        )
+
+    def average_rating(self):
+        approved = self.approved_reviews()
+        if not approved:
+            return 0
+        return round(sum(r.rating for r in approved) / len(approved), 1)
+
 
 class AdminUser(db.Model):
     __tablename__ = 'admin_user'
@@ -98,6 +110,18 @@ class Order(db.Model):
     ref_id = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     items = db.relationship('OrderItem', backref='order', lazy=True)
+
+
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text)
+    is_approved = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    product = db.relationship('Product', backref='reviews')
 
 
 class OrderItem(db.Model):
