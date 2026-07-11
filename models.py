@@ -109,7 +109,8 @@ class Order(db.Model):
     authority = db.Column(db.String(200))
     ref_id = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    items = db.relationship('OrderItem', backref='order', lazy=True)
+    items = db.relationship('OrderItem', backref='order', lazy=True,
+                            cascade='all, delete-orphan')
 
 
 class Review(db.Model):

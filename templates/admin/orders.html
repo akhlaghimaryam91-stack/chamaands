@@ -86,6 +86,10 @@
           </select>
           <button type="submit" class="btn btn-outline" style="padding:.4rem .8rem;font-size:.85rem">ثبت</button>
         </form>
+        <form method="post" action="{{ url_for('admin_order_delete', oid=order.id) }}"
+              style="margin-top:.4rem" onsubmit="return confirm('این سفارش برای همیشه حذف شود؟')">
+          <button type="submit" class="btn btn-outline" style="padding:.4rem .8rem;font-size:.85rem;color:#c62828">حذف</button>
+        </form>
       </td>
     </tr>
     {% else %}

@@ -516,6 +516,16 @@ def admin_order_status(oid):
     return redirect(url_for('admin_orders'))
 
 
+@app.route('/admin/orders/<int:oid>/delete', methods=['POST'])
+@admin_required
+def admin_order_delete(oid):
+    order = Order.query.get_or_404(oid)
+    db.session.delete(order)
+    db.session.commit()
+    flash('سفارش حذف شد.', 'success')
+    return redirect(url_for('admin_orders'))
+
+
 @app.context_processor
 def inject_now():
     return {'now': datetime.utcnow()}
